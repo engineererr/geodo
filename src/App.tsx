@@ -17,8 +17,11 @@ import logo from './logo.svg';
 interface IAppState {
   isLoading: boolean;
   options: string[];
-  flexItemsCount: number;
+  panelCount: number;
   dataArray: object[];
+  batterySize: number;
+  kWhBought: number;
+  kWhSold: number;
 }
 
 // const dummyData = [['Zeit', 'Produktion', 'Verbrauch', 'Batterie'],
@@ -36,11 +39,11 @@ interface IAppState {
 // ['Dez', 136, 691, 0.6]];
 
 const dataSet = [
-  { time: 0, production: 10, consumtion: 3, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0 },
-  { time: 1, production: 10, consumtion: 20, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0 },
-  { time: 2, production: 10, consumtion: 3, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0 },
-  { time: 3, production: 10, consumtion: 3, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0 },
-  { time: 4, production: 10, consumtion: 3, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0 },
+  { time: 0, production: 10, totalProduction: 0, consumtion: 3, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0, kWhSold: 0 },
+  { time: 1, production: 10, totalProduction: 0, consumtion: 20, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0, kWhSold: 0 },
+  { time: 2, production: 10, totalProduction: 0, consumtion: 3, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0, kWhSold: 0 },
+  { time: 3, production: 10, totalProduction: 0, consumtion: 3, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0, kWhSold: 0 },
+  { time: 4, production: 10, totalProduction: 0, consumtion: 3, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0, kWhSold: 0 },
 ];
 
 const apiEndpoint: string = "https://api3.geo.admin.ch/1804191145/rest/services/ech/SearchServer?sr=2056&lang=en&type=featuresearch&features=ch.bfs.gebaeude_wohnungs_register&timeEnabled=false&timeStamps=&searchText="
@@ -48,28 +51,47 @@ class App extends React.Component<{}, IAppState> {
   constructor(props: any) {
     super(props);
     this.state = {
+      batterySize: 50,
       dataArray: [],
-      flexItemsCount: 1,
       isLoading: false,
+      kWhBought: 0,
+      kWhSold: 0,
       options: [],
+      panelCount: 1,
     };
-
   }
 
   public componentDidMount() {
     this.calculate()
   }
+
+  public calculateProduction(element: any): any {
+    element.totalProduction = element.production * this.state.panelCount;
+    return element;
+  }
+
   public calculateBatteryLevel(element, previousBatteryLevel) {
     element.batteryLevel = previousBatteryLevel;
-    const totalEnergyOverflow: number = element.production - element.consumtion;
+    element.kWhBought = 0;
+    element.kWhSold = 0;
+    const totalEnergyOverflow: number = element.totalProduction - element.consumtion;
     if (totalEnergyOverflow >= 0) {
       // overflow positive, energy is saved to battery
-      element.batteryLevel += totalEnergyOverflow;
+      if (element.batteryLevel + totalEnergyOverflow < this.state.batterySize) {
+        // battery not yet full
+        element.batteryLevel += totalEnergyOverflow;
+      } else {
+        // battery full
+        element.batteryLevel = this.state.batterySize;
+        element.kWhSold += element.batteryLevel + totalEnergyOverflow - this.state.batterySize;
+      }
     } else {
-      // overflow negative, energy from battery or Kraftwerk is used      
+      // overflow negative, energy from battery or Kraftwerk is used
       if (Math.abs(totalEnergyOverflow) < element.batteryLevel) {
+        // battery not empty
         element.batteryLevel -= totalEnergyOverflow;
       } else {
+        // battery empty
         const diff = Math.abs(totalEnergyOverflow) - element.batteryLevel;
         element.batteryLevel = 0;
         element.kWhBought = diff;
@@ -77,17 +99,25 @@ class App extends React.Component<{}, IAppState> {
     }
     return element;
   }
+
   public calculate() {
     let previousBatteryLevel = 0;
+    let kWhBought = 0;
+    let kWhSold = 0;
     const resultingDataSet: any[][] = [];
-    resultingDataSet.push(['Zeit', 'Produktion', 'Verbrauch', 'Batterie']);
+    resultingDataSet.push(['Zeit', 'Produktion', 'Verbrauch', 'Batterie', 'Gekaufte kWh', 'Verkaufte kWh']);
+
     dataSet.forEach(element => {
+      element = this.calculateProduction(element);
       element = this.calculateBatteryLevel(element, previousBatteryLevel);
-      resultingDataSet.push([element.time, element.production, element.consumtion, element.batteryLevel]);
+      kWhBought += element.kWhBought;
+      kWhSold += element.kWhSold;
+      resultingDataSet.push([element.time, element.totalProduction, element.consumtion, element.batteryLevel, element.kWhBought, element.kWhSold]);
       previousBatteryLevel = element.batteryLevel;
     });
 
-    this.setState({ dataArray: resultingDataSet });
+
+    this.setState({ dataArray: resultingDataSet, kWhBought, kWhSold });
   }
 
   public render() {
@@ -100,7 +130,6 @@ class App extends React.Component<{}, IAppState> {
         <p className="App-intro">
           Search for your location first
         </p>
-
 
         <AsyncTypeahead
           placeholder="search your location"
@@ -121,6 +150,7 @@ class App extends React.Component<{}, IAppState> {
         <div className="Flex-container">
           {this.renderSolarPanels()}
         </div>
+        <div>kWhBought: {this.state.kWhBought} kWhSold: {this.state.kWhSold}</div>
         <Chart chartType={"ComboChart"}
           data={this.state.dataArray}
           width="100%" legend_toggle={true} options={{
@@ -148,21 +178,21 @@ class App extends React.Component<{}, IAppState> {
   private renderSolarPanels = () => {
     // tslint:disable-next-line
     let result: any = [];
-    for (let i = 0; i < this.state.flexItemsCount; i++) {
-      result.push(<div key={i} className="Flex-item">1qm</div>);
+    for (let i = 0; i < this.state.panelCount; i++) {
+      result.push(<div key={i} className="Flex-item" />);
     }
     return result;
   }
   private handleAddFlexItem = () => {
     this.setState((prevState) => {
-      return { flexItemsCount: prevState.flexItemsCount + 1 };
-    });
+      return { panelCount: prevState.panelCount + 1 };
+    }, () => this.calculate());
   }
 
   private handleRemoveFlexItem = () => {
     this.setState((prevState) => {
-      return { flexItemsCount: prevState.flexItemsCount - 1 };
-    });
+      return { panelCount: prevState.panelCount - 1 };
+    }, () => this.calculate());
   }
 
   private handleSearch = (query: any) => {
