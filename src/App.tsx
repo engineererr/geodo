@@ -6,13 +6,13 @@ import 'bootstrap/dist/css/bootstrap.css';
 // tslint:disable-next-line
 import axios from 'axios';
 import { Button } from 'react-bootstrap';
-import { Chart } from 'react-google-charts';
 
 import { AsyncTypeahead } from 'react-bootstrap-typeahead';
 
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 import logo from './logo.svg';
+import SolarChart from './SolarChart';
 
 interface IAppState {
   isLoading: boolean;
@@ -22,21 +22,8 @@ interface IAppState {
   batterySize: number;
   kWhBought: number;
   kWhSold: number;
+  kWhPriceTotal: number;
 }
-
-// const dummyData = [['Zeit', 'Produktion', 'Verbrauch', 'Batterie'],
-// ['Jan', 165, 938, 0.4],
-// ['Feb', 135, 1120, 0.2],
-// ['Mar', 157, 1167, 0.7],
-// ['Apr', 139, 1110, 0.4],
-// ['Mai', 136, 691, 0.6],
-// ['Jun', 136, 1500, 0.6],
-// ['Jul', 157, 691, 0.9],
-// ['Aug', 136, 100, 2.3],
-// ['Sep', 800, 800, 4],
-// ['Oct', 136, 1300, 0.6],
-// ['Nov', 10, 2000, 1.6],
-// ['Dez', 136, 691, 0.6]];
 
 const dataSet = [
   { time: 0, production: 10, totalProduction: 0, consumtion: 3, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0, kWhSold: 0 },
@@ -47,14 +34,20 @@ const dataSet = [
 ];
 
 const apiEndpoint: string = "https://api3.geo.admin.ch/1804191145/rest/services/ech/SearchServer?sr=2056&lang=en&type=featuresearch&features=ch.bfs.gebaeude_wohnungs_register&timeEnabled=false&timeStamps=&searchText="
-class App extends React.Component<{}, IAppState> {
+
+const kWhSellPrice = 0.05;
+const kWhBuyPrice = 0.20;
+
+class App extends React.Component<any, IAppState> {
   constructor(props: any) {
     super(props);
+
     this.state = {
       batterySize: 50,
       dataArray: [],
       isLoading: false,
       kWhBought: 0,
+      kWhPriceTotal: 0,
       kWhSold: 0,
       options: [],
       panelCount: 1,
@@ -104,6 +97,7 @@ class App extends React.Component<{}, IAppState> {
     let previousBatteryLevel = 0;
     let kWhBought = 0;
     let kWhSold = 0;
+    let kWhPriceTotal = 0;
     const resultingDataSet: any[][] = [];
     resultingDataSet.push(['Zeit', 'Produktion', 'Verbrauch', 'Batterie', 'Gekaufte kWh', 'Verkaufte kWh']);
 
@@ -111,14 +105,18 @@ class App extends React.Component<{}, IAppState> {
       element = this.calculateProduction(element);
       element = this.calculateBatteryLevel(element, previousBatteryLevel);
       kWhBought += element.kWhBought;
+      kWhPriceTotal -= element.kWhBought * kWhBuyPrice;
       kWhSold += element.kWhSold;
+      kWhPriceTotal += element.kWhSold * kWhSellPrice;
+      kWhPriceTotal = Math.round(kWhPriceTotal * 100) / 100;
       resultingDataSet.push([element.time, element.totalProduction, element.consumtion, element.batteryLevel, element.kWhBought, element.kWhSold]);
       previousBatteryLevel = element.batteryLevel;
     });
 
 
-    this.setState({ dataArray: resultingDataSet, kWhBought, kWhSold });
+    this.setState({ dataArray: resultingDataSet, kWhBought, kWhSold, kWhPriceTotal });
   }
+
 
   public render() {
     return (
@@ -139,7 +137,7 @@ class App extends React.Component<{}, IAppState> {
           options={this.state.options}
           onChange={this.handleOnChange}
           delay={300}
-          // tslint:disable-next-line jsx-no-lambda
+          // tslint:disable-next-line:jsx-no-lambda
           renderMenuItemChildren={(option, props) => (
             <span key={option.id}> {option} </span>
           )}
@@ -150,16 +148,10 @@ class App extends React.Component<{}, IAppState> {
         <div className="Flex-container">
           {this.renderSolarPanels()}
         </div>
-        <div>kWhBought: {this.state.kWhBought} kWhSold: {this.state.kWhSold}</div>
-        <Chart chartType={"ComboChart"}
-          data={this.state.dataArray}
-          width="100%" legend_toggle={true} options={{
-            hAxis: { title: 'Month' },
-            series: { 2: { type: 'line', targetAxisIndex: 1 } },
-            seriesType: 'area',
-            title: 'Verbrauchsprofil',
-            vAxis: { title: 'Batterieladung' },
-          }} />
+        <div>kWhBought: {this.state.kWhBought} kWhSold: {this.state.kWhSold} kWhPriceTotal: {this.state.kWhPriceTotal}CHF</div>
+        <Button onClick={this.handleAddRow} value="add row" >Add row</Button>
+
+        <SolarChart dataArray={this.state.dataArray} />
       </div>
     );
   }
@@ -182,6 +174,11 @@ class App extends React.Component<{}, IAppState> {
       result.push(<div key={i} className="Flex-item" />);
     }
     return result;
+  }
+
+  private handleAddRow = () => {
+    dataSet.push({ time: 5, production: 10, totalProduction: 0, consumtion: 3, batteryLevel: 0, totalEnergyOverflow: 0, kWhBought: 0, kWhSold: 0 });
+    this.calculate();
   }
   private handleAddFlexItem = () => {
     this.setState((prevState) => {
