@@ -113,7 +113,6 @@ class App extends React.Component<any, IAppState> {
       previousBatteryLevel = element.batteryLevel;
     });
 
-
     this.setState({ dataArray: resultingDataSet, kWhBought, kWhSold, kWhPriceTotal });
   }
 
@@ -150,7 +149,6 @@ class App extends React.Component<any, IAppState> {
         </div>
         <div>kWhBought: {this.state.kWhBought} kWhSold: {this.state.kWhSold} kWhPriceTotal: {this.state.kWhPriceTotal}CHF</div>
         <Button onClick={this.handleAddRow} value="add row" >Add row</Button>
-
         <SolarChart dataArray={this.state.dataArray} />
       </div>
     );
@@ -182,12 +180,14 @@ class App extends React.Component<any, IAppState> {
   }
   private handleAddFlexItem = () => {
     this.setState((prevState) => {
+      if (prevState.panelCount === 20) { return { panelCount: prevState.panelCount }; }
       return { panelCount: prevState.panelCount + 1 };
     }, () => this.calculate());
   }
 
   private handleRemoveFlexItem = () => {
     this.setState((prevState) => {
+      if (prevState.panelCount === 0) { return { panelCount: prevState.panelCount }; }
       return { panelCount: prevState.panelCount - 1 };
     }, () => this.calculate());
   }
