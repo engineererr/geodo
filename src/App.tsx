@@ -1,12 +1,11 @@
 import * as React from 'react';
 import './App.css';
 
-import 'bootstrap/dist/css/bootstrap-theme.css';
-import 'bootstrap/dist/css/bootstrap.css';
 // tslint:disable-next-line
 import axios from 'axios';
-import { Button } from 'react-bootstrap';
-
+import 'bootstrap/dist/css/bootstrap-theme.css';
+import 'bootstrap/dist/css/bootstrap.css';
+import { Button, Nav, Navbar, NavbarBrand, NavItem } from 'react-bootstrap';
 import { AsyncTypeahead } from 'react-bootstrap-typeahead';
 
 import 'react-bootstrap-typeahead/css/Typeahead.css';
@@ -119,38 +118,77 @@ class App extends React.Component<any, IAppState> {
 
   public render() {
     return (
-      <div className="App">
+      <div className="App" id="page-top" data-spy="scroll" data-target=".navbar" data-offset="50">
+        <Navbar fixedTop={true}>
+          <Navbar.Header>
+            <NavbarBrand><a href="#page-top">GEODO</a></NavbarBrand>
+          </Navbar.Header>
+          <Nav>
+            <NavItem eventKey={1} href="#sectionLoaction">
+              Wohnort
+            </NavItem>
+            <NavItem eventKey={2} href="#sectionVerbraucherprofil">
+              Verbraucherprofil
+            </NavItem>
+            <NavItem eventKey={3} href="#sectionSolarPanels">
+              Solarpanels
+            </NavItem>
+            <NavItem eventKey={4} href="#sectionSolarChart">
+              Resultat
+            </NavItem>
+          </Nav>
+        </Navbar>
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
           <h1 className="App-title">Welcome to GEO-DO</h1>
         </header>
-        <p className="App-intro">
-          Search for your location first
-        </p>
-
-        <AsyncTypeahead
-          placeholder="search your location"
-          labelKey="search"
-          isLoading={this.state.isLoading}
-          onSearch={this.handleSearch}
-          options={this.state.options}
-          onChange={this.handleOnChange}
-          delay={300}
-          // tslint:disable-next-line:jsx-no-lambda
-          renderMenuItemChildren={(option, props) => (
-            <span key={option.id}> {option} </span>
-          )}
-        />
-        <h1>Solar Panels</h1>
-        <Button onClick={this.handleAddFlexItem} value="add solar panel" >Add</Button>
-        <Button onClick={this.handleRemoveFlexItem} value="remove solar panel" >Remove</Button>
-        <div className="Flex-container">
-          {this.renderSolarPanels()}
+        <div className="sectionLocation" id="sectionLoaction">
+          <div className="container">
+            <h1>1. Suche deinen Standort</h1>
+            <AsyncTypeahead
+              placeholder="Wo wohnst du?"
+              labelKey="search"
+              isLoading={this.state.isLoading}
+              onSearch={this.handleSearch}
+              options={this.state.options}
+              onChange={this.handleOnChange}
+              delay={300}
+              // tslint:disable-next-line:jsx-no-lambda
+              renderMenuItemChildren={(option, props) => (
+                <span key={option.id}> {option} </span>
+              )}
+            />
+          </div>
         </div>
-        <div>kWhBought: {this.state.kWhBought} kWhSold: {this.state.kWhSold} kWhPriceTotal: {this.state.kWhPriceTotal}CHF</div>
-        <Button onClick={this.handleAddRow} value="add row" >Add row</Button>
-        <SolarChart dataArray={this.state.dataArray} />
-      </div>
+        <div className="sectionVerbraucherprofil" id="sectionVerbraucherprofil">
+          <div className="container">
+            <h1>2. Verbraucherprofil angeben</h1>
+            <div className="Flex-container-verbraucherprofil">
+              <div className="Flex-item-verbraucherprofil">Single</div>
+              <div className="Flex-item-verbraucherprofil">Couple</div>
+              <div className="Flex-item-verbraucherprofil">Family</div>
+            </div>
+          </div>
+        </div>
+        <div className="sectionSolarPanels" id="sectionSolarPanels">
+          <div className="container">
+            <h1>3. Anzahl Solar Panels auswählen</h1>
+            <Button onClick={this.handleAddFlexItem} value="add solar panel" >Add</Button>
+            <Button onClick={this.handleRemoveFlexItem} value="remove solar panel" >Remove</Button>
+            <div className="Flex-container">
+              {this.renderSolarPanels()}
+            </div>
+          </div>
+          <div>kWhBought: {this.state.kWhBought} kWhSold: {this.state.kWhSold} kWhPriceTotal: {this.state.kWhPriceTotal}CHF</div>
+          <Button onClick={this.handleAddRow} value="add row" >Add row</Button>
+        </div>
+        <div className="sectionSolarChart" id="sectionSolarChart">
+          <div className="container">
+            <h1>4. Deine Berechnungen</h1>
+            <SolarChart dataArray={this.state.dataArray} />
+          </div>
+        </div>
+      </div >
     );
   }
 
@@ -217,7 +255,7 @@ class App extends React.Component<any, IAppState> {
     }, (error) => {
       console.log(error);
     });
-    // return new Promise((resolve, reject) => resolve({ "options": ["kai", "dominique"] }));
+    // return new Promise((resolve, reject) => resolve({"options": ["kai", "dominique"] }));
   };
 }
 

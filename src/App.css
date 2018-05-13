@@ -1,5 +1,6 @@
 .App {
   text-align: center;
+  position: relative;
 }
 
 .App-logo {
@@ -8,10 +9,36 @@
 }
 
 .App-header {
-  background-color: #222;
-  height: 150px;
+  background-color: #2c3e50;
+  height: 220px;
   padding: 20px;
   color: white;
+  padding-top: 70px;
+}
+
+.sectionLocation {
+  background-color: #18bc9c;
+  color: white;
+  height: 200px;
+  padding: 20px;
+}
+
+.sectionVerbraucherprofil {
+  background-color: white;
+  color: #2c3e50;
+  padding: 20px;
+}
+
+.sectionSolarPanels {
+  background-color: #18bc9c;
+  color: white;
+  padding: 20px;
+}
+
+.sectionSolarChart {
+  background-color: white;
+  color: #2c3e50;
+  padding: 20px;
 }
 
 .Custom-btn {
@@ -56,6 +83,37 @@
   padding: 5px;
   width: 25px;
   height: 25px;
+  margin: 10px;
+  margin-left: 5px;
+  line-height: 150px;
+  color: white;
+  font-weight: bold;
+  font-size: 3em;
+  text-align: center;
+  display: inline-block;
+}
+
+.Flex-container-verbraucherprofil {
+  flex: 1;
+  padding: 0;
+  width: 650px;
+  height: 200px;
+  margin: auto;
+  margin-top: 10px;
+  list-style: none;
+  -webkit-flex-direction: row;
+  /* Safari */
+  flex-direction: row;
+  flex-wrap: wrap;
+  border-style: dotted;
+  border-color: grey;
+}
+
+.Flex-item-verbraucherprofil {
+  background: tomato;
+  padding: 5px;
+  width: 200px;
+  height: 170px;
   margin: 10px;
   margin-left: 5px;
   line-height: 150px;
